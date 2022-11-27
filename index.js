@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { query } = require('express');
 require('dotenv').config();
 
 const port = process.env.PORT || 5000;
@@ -18,9 +19,9 @@ console.log(uri)
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 async function run(){
     try{
-        const allCategoriesCollection = client.db('resalebooks').collection('allCategories')
-        const booksCollection = client.db('resalebooks').collection('books')
-        
+        const allCategoriesCollection = client.db('resalebooks').collection('allCategories');
+        const booksCollection = client.db('resalebooks').collection('books');
+        const bookingsCollection = client.db('resalebooks').collection('booking');
         app.get('/allCategories',async(req, res) =>{
             const query = {};
             const categories = await allCategoriesCollection.find(query).toArray();
@@ -32,6 +33,24 @@ async function run(){
             const query = {categoryId: id};
             const books = await booksCollection.find(query).toArray();
             res.send(books);
+        });
+
+        app.post('/bookings',async(req, res) =>{
+            const booking = req.body
+            console.log(booking);
+
+            const query = {
+                email:booking.email
+            }
+            const alreadyBooked = await bookingsCollection.find(query).toArray();
+
+            if(alreadyBooked.length){
+                const message = `You already booked ${booking.email}`
+                return res.send({acknowledged: false, message})
+            }
+
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
         })
 
     }
