@@ -44,6 +44,7 @@ async function run(){
         const booksCollection = client.db('resalebooks').collection('books');
         const bookingsCollection = client.db('resalebooks').collection('booking');
         const usersCollection = client.db('resalebooks').collection('users');
+        const paymentsCollection = client.db('resalebooks').collection('payments');
         app.get('/allCategories',async(req, res) =>{
             const query = {};
             const categories = await allCategoriesCollection.find(query).toArray();
@@ -111,6 +112,22 @@ async function run(){
             res.send({
                 clientSecret: paymentIntent.client_secret,
             })
+        });
+
+        app.post('/payments', async (req, res) =>{
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.bookingId
+            const filter = {_id: ObjectId(id)}
+            const updatedDoc = {
+                $set:{
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateRessult = await bookingsCollection.updateOne(filter,updatedDoc)
+
+            res.send(result)
         })
 
         app.get('/jwt', async(req, res) =>{
@@ -129,6 +146,36 @@ async function run(){
             const users = await usersCollection.find(query).toArray();
             res.send(users);
         });
+
+        app.get('/buyers', async(req,res) =>{
+            const role = req.query.role;
+            const query = {role: role};
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.delete("/buyer/:id",verifyJWT,async(req,res) =>{
+            const id=req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        app.get('/sellers', async(req,res) =>{
+            const role = req.query.role;
+            const query = {role: role};
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.delete("/seller/:id",verifyJWT,async(req,res) =>{
+            const id=req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+
 
         app.get('/users/admin/:email', async(req, res) =>{
             const email = req.params.email;
