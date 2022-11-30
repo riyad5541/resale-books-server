@@ -168,6 +168,20 @@ async function run(){
             res.send(result);
         });
 
+        app.get('/users/buyer/:email',async(req,res)=>{
+            const  email = req.params.email;
+            const query = {email};
+            const user = await usersCollection.findOne(query);
+            res.send({isBuyer:user?.role === "Buyer"});
+        })
+
+        app.get('/users/seller/:email',async(req,res)=>{
+            const  email = req.params.email;
+            const query = {email};
+            const user = await usersCollection.findOne(query);
+            res.send({isSeller:user?.role === "Seller"});
+        });
+
         app.delete("/seller/:id",verifyJWT,async(req,res) =>{
             const id=req.params.id;
             const filter = {_id: ObjectId(id)};
@@ -175,7 +189,24 @@ async function run(){
             res.send(result);
         })
 
+        app.get('/products',verifyJWT, async(req,res) =>{
+            const query = {};
+            const products = await booksCollection.find(query).toArray();
+            res.send(products);
+        })
 
+        app.post('/products',verifyJWT, async(req,res) =>{
+            const product = req.body;
+            const result = await booksCollection.insertOne(product);
+            res.send(result)
+        });
+
+        app.delete('/products/:id', verifyJWT, async(req,res) =>{
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id)};
+            const result = await booksCollection.deleteOne(filter);
+            res.send(result);
+        })
 
         app.get('/users/admin/:email', async(req, res) =>{
             const email = req.params.email;
